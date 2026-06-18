@@ -2,7 +2,7 @@ def is_number(s):
     try:
         float(s)
         return True
-    except ValueError:
+    except:
         return False
 
 def operator(simbol):
@@ -31,8 +31,6 @@ def to_list(tokens):
         elif i == ')':
             while stack and stack[-1] != '(':
                 leaves.append(stack.pop())
-            if not stack:
-                raise ValueError("несогласованные скобки")
             stack.pop()
             if stack and stack[-1] in {'sin', 'cos', 'ln', 'tg', 'ctg', 'exp'}:
                 leaves.append(stack.pop())
@@ -46,8 +44,6 @@ def to_list(tokens):
             stack.append(i)
 
     while stack:
-        if stack[-1] == '(':
-            raise ValueError("Несогласованные скобки")
         leaves.append(stack.pop())
 
     return leaves
