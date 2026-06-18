@@ -1,0 +1,232 @@
+from list import is_number
+from list import operator
+from read import reading
+from list import to_list
+
+
+class _Node:
+    pass
+
+
+def insert(data, left, right):
+    node = _Node()
+    node.data = data
+    node.left = left
+    node.right = right
+    return node
+
+
+def build(tokens):
+    stack = []
+    unary = {'sin', 'cos', 'ln', 'tg', 'ctg', 'exp'}
+
+    for tok in tokens:
+        if not operator(tok):
+            stack.append(insert(tok, None, None))
+        elif tok in unary:
+            arg = stack.pop()
+            stack.append(insert(tok, arg, None))
+        else:
+            right = stack.pop()
+            left = stack.pop()
+            stack.append(insert(tok, left, right))
+
+
+    return stack.pop()
+
+
+def to_str(node):
+    if node is None:
+        return ""
+
+    if node.left is None and node.right is None:
+        return str(node.data)
+
+    if node.data in {'sin', 'cos', 'ln', 'tg', 'ctg','exp'}:
+        return str(node.data) + "(" + str(to_str(node.left)) + ")"
+
+    left = to_str(node.left)
+    right = to_str(node.right)
+
+    if node.data == 'log':
+        return 'log('+str(left)+','+str(right)+')'
+
+    if node.left and (node.left.left is not None or node.left.right is not None):
+        left = '('+str(left)+')'
+
+    if node.right and (node.right.left is not None or node.right.right is not None):
+        right = '('+str(right)+')'
+
+    return str(left)+str(node.data)+str(right)
+
+
+
+def dif(node):
+    if node is None:
+        return None
+
+    if node.data=='x':
+        return insert('1',None,None)
+
+    if is_number(node.data):
+        return insert('0', None, None)
+
+    if node.data=='*':
+        lef=insert('*',dif(node.left),node.right)
+        rig=insert('*',node.left,dif(node.right))
+        return insert('+', lef,rig)
+
+    if node.data=='/':
+        lef=insert('*',dif(node.left),node.right)
+        rig=insert('*',node.left,dif(node.right))
+        chisl=insert('-', lef,rig)
+        znam= insert('^', node.right, insert('2', None, None))
+        return insert('/',chisl,znam)
+
+    if node.data == '-':
+        if node.right is None:
+            return insert('-', dif(node.left), None)
+        else:
+            return insert('-', dif(node.left), dif(node.right))
+
+    if node.data=='+':
+        return insert('+',dif(node.left),dif(node.right))
+
+    if node.data == 'sin':
+        cos_term = insert('cos', node.left, None)
+        return insert('*', cos_term, dif(node.left))
+
+    if node.data == 'cos':
+        sin_term = insert('sin', node.left, None)
+        return insert('*', insert('*', insert('-1', None, None), sin_term), dif(node.left))
+
+    if node.data == 'tg':
+        term = insert('^',insert('cos',node.left,None), insert('2',None,None))
+        return insert('/',dif(node.left),term)
+
+    if node.data == 'ctg':
+        term = insert('^',insert('sin',node.left,None), insert('2',None,None))
+        t= insert('/',dif(node.left),term)
+        return insert('*', insert('-1', None, None), t)
+
+    if node.data == 'ln':
+        return insert('/', dif(node.left), node.left)
+
+    if node.data == 'exp':
+        return insert('*', insert('exp', node.left, None), dif(node.left))
+
+    if node.data == 'log':
+        znam = insert('*', node.right, insert('ln', node.left, None))
+        return insert('/', insert('1', None, None), znam)
+
+    if node.data == '^':
+        if node.right is None:
+            return dif(node.left)
+
+        if node.right.left is None and node.right.right is None and node.right.data.isdigit():
+            n = int(node.right.data)
+
+            if n == 1:
+                return dif(node.left)
+            elif n == 0:
+                return insert('0', None, None)
+            else:
+                n_node = insert(str(n), None, None)
+                power = insert('^', node.left, insert(str(n - 1), None, None))
+                return insert('*', insert('*', n_node, power), dif(node.left))
+
+        if is_number(node.left.data) and not is_number(node.right.data):
+            return insert('*',
+                          insert('*', insert('^', node.left, node.right), insert('ln', node.left, None)),
+                          dif(node.right))
+
+def simplify(node):
+    if node is None:
+        return None
+
+    if node.left:
+        node.left = simplify(node.left)
+    if node.right:
+        node.right = simplify(node.right)
+
+    if node.data in {'+', '-', '*', '/', '^'}:
+        if node.left and node.right:
+            left_is_num = is_number(node.left.data)
+            right_is_num = is_number(node.right.data)
+
+            if left_is_num and right_is_num:
+                left_val = float(node.left.data)
+                right_val = float(node.right.data)
+
+                if node.data == '+':
+                    return insert(str(left_val + right_val), None, None)
+                elif node.data == '-':
+                    return insert(str(left_val - right_val), None, None)
+                elif node.data == '*':
+                    return insert(str(left_val * right_val), None, None)
+                elif node.data == '/':
+                    if right_val != 0:
+                        return insert(str(left_val / right_val), None, None)
+                elif node.data == '^':
+                    return insert(str(left_val ** right_val), None, None)
+
+    if node.data == '*':
+        if node.left and node.right:
+            if is_number(node.left.data) and float(node.left.data) == 0:
+                return insert('0', None, None)
+            if is_number(node.right.data) and float(node.right.data) == 0:
+                return insert('0', None, None)
+            if is_number(node.left.data) and float(node.left.data) == 1:
+                return node.right
+            if is_number(node.right.data) and float(node.right.data) == 1:
+                return node.left
+
+    if node.data == '+':
+        if node.left and node.right:
+            if is_number(node.left.data) and float(node.left.data) == 0:
+                return node.right
+            if is_number(node.right.data) and float(node.right.data) == 0:
+                return node.left
+
+    if node.data == '-':
+        if node.left and node.right:
+            if is_number(node.right.data) and float(node.right.data) == 0:
+                return node.left
+
+    if node.data == '^':
+        if node.left and node.right:
+            if is_number(node.right.data) and float(node.right.data) == 1:
+                return node.left
+            if is_number(node.right.data) and float(node.right.data) == 0:
+                return insert('1', None, None)
+
+    if node.data == '*':
+        if node.left and node.right:
+            if node.left.data == '*' and node.left.left and node.left.right:
+                if is_number(node.left.left.data) and is_number(node.right.data):
+                    c= float(node.left.left.data) * float(node.right.data)
+                    return insert('*', insert(str(c), None, None), node.left.right)
+
+                if is_number(node.left.right.data) and is_number(node.right.data):
+                    c = float(node.left.right.data) * float(node.right.data)
+                    return insert('*', insert(str(c), None, None), node.left.left)
+
+            if node.right.data == '*' and node.right.left and node.right.right:
+                if is_number(node.left.data) and is_number(node.right.left.data):
+                    c = float(node.left.data) * float(node.right.left.data)
+                    return insert('*', insert(str(c), None, None), node.right.right)
+
+                if is_number(node.left.data) and is_number(node.right.right.data):
+                    c = float(node.left.data) * float(node.right.right.data)
+                    return insert('*', insert(str(c), None, None), node.right.left)
+
+    return node
+
+s = input()
+tokens = reading(s)
+postfix = to_list(tokens)
+tree = build(postfix)
+
+d = dif(tree)
+
+print(to_str(simplify(d)))
