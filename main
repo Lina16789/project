@@ -1,0 +1,14 @@
+from read import reading
+from list import to_list
+from tree import build
+from tree import dif
+from tree import to_str
+from simple import simple
+
+s = input("введите выражение:")
+tokens = reading(s)
+lst = to_list(tokens)
+tree = build(lst)
+d = dif(tree)
+
+print(to_str(simple(d)))
