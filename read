@@ -6,10 +6,10 @@ def reading(s):
         if symbol.isalnum() or symbol == '.':
             b += symbol
         else:
-            if b:
+            if len(b)!=0:
                 tokens.append(b)
                 b = ""
-            if symbol.strip() and symbol != ',':
+            if len(symbol.strip())!=0 and symbol != ',':
                 tokens.append(symbol)
 
     if b:
