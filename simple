@@ -1,0 +1,84 @@
+from list import is_number
+from tree import insert
+
+def simple(node):
+    if node is None:
+        return None
+
+    if node.left:
+        node.left = simple(node.left)
+    if node.right:
+        node.right = simple(node.right)
+
+    if node.data in {'+', '-', '*', '/', '^'}:
+        if node.left and node.right:
+            left_num = is_number(node.left.data)
+            right_num = is_number(node.right.data)
+
+            if left_num and right_num:
+                left_val = float(node.left.data)
+                right_val = float(node.right.data)
+
+                if node.data == '+':
+                    return insert(str(left_val + right_val), None, None)
+                elif node.data == '-':
+                    return insert(str(left_val - right_val), None, None)
+                elif node.data == '*':
+                    return insert(str(left_val * right_val), None, None)
+                elif node.data == '/':
+                    if right_val != 0:
+                        return insert(str(left_val / right_val), None, None)
+                elif node.data == '^':
+                    return insert(str(left_val ** right_val), None, None)
+
+    if node.data == '*':
+        if node.left and node.right:
+            if is_number(node.left.data) and float(node.left.data) == 0:
+                return insert('0', None, None)
+            if is_number(node.right.data) and float(node.right.data) == 0:
+                return insert('0', None, None)
+            if is_number(node.left.data) and float(node.left.data) == 1:
+                return node.right
+            if is_number(node.right.data) and float(node.right.data) == 1:
+                return node.left
+
+    if node.data == '+':
+        if node.left and node.right:
+            if is_number(node.left.data) and float(node.left.data) == 0:
+                return node.right
+            if is_number(node.right.data) and float(node.right.data) == 0:
+                return node.left
+
+    if node.data == '-':
+        if node.left and node.right:
+            if is_number(node.right.data) and float(node.right.data) == 0:
+                return node.left
+
+    if node.data == '^':
+        if node.left and node.right:
+            if is_number(node.right.data) and float(node.right.data) == 1:
+                return node.left
+            if is_number(node.right.data) and float(node.right.data) == 0:
+                return insert('1', None, None)
+
+    if node.data == '*':
+        if node.left and node.right:
+            if node.left.data == '*' and node.left.left and node.left.right:
+                if is_number(node.left.left.data) and is_number(node.right.data):
+                    c= float(node.left.left.data) * float(node.right.data)
+                    return insert('*', insert(str(c), None, None), node.left.right)
+
+                if is_number(node.left.right.data) and is_number(node.right.data):
+                    c = float(node.left.right.data) * float(node.right.data)
+                    return insert('*', insert(str(c), None, None), node.left.left)
+
+            if node.right.data == '*' and node.right.left and node.right.right:
+                if is_number(node.left.data) and is_number(node.right.left.data):
+                    c = float(node.left.data) * float(node.right.left.data)
+                    return insert('*', insert(str(c), None, None), node.right.right)
+
+                if is_number(node.left.data) and is_number(node.right.right.data):
+                    c = float(node.left.data) * float(node.right.right.data)
+                    return insert('*', insert(str(c), None, None), node.right.left)
+
+    return node
