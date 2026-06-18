@@ -1,0 +1,53 @@
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+def operator(simbol):
+    return simbol in {"+", "-", "*", "/","sin", "cos", "ln","^","tg", "ctg", "log", "exp"}
+
+
+def to_list(tokens):
+    leaves = []
+    stack = []
+    priority = {'+': 1, '-': 1, '*': 2, '/': 2, '^': 3, 'sin': 4, 'cos': 4, 'ln': 4, 'tg': 4, 'ctg': 4, 'exp': 4, 'log': 4}
+
+    for i in tokens:
+        if not operator(i) and i not in {'(', ')'}:
+            leaves.append(i)
+
+
+        elif i in {'sin', 'cos', 'ln', 'tg', 'ctg', 'exp'}:
+            stack.append(i)
+
+        elif i == 'log':
+            stack.append(i)
+
+        elif i == '(':
+            stack.append(i)
+
+        elif i == ')':
+            while stack and stack[-1] != '(':
+                leaves.append(stack.pop())
+            if not stack:
+                raise ValueError("несогласованные скобки")
+            stack.pop()
+            if stack and stack[-1] in {'sin', 'cos', 'ln', 'tg', 'ctg', 'exp'}:
+                leaves.append(stack.pop())
+
+        elif i == '^':
+            stack.append(i)
+
+        elif i in {'+', '-', '*', '/'}:
+            while stack and stack[-1] != '(' and priority.get(stack[-1], 0) >= priority[i]:
+                leaves.append(stack.pop())
+            stack.append(i)
+
+    while stack:
+        if stack[-1] == '(':
+            raise ValueError("Несогласованные скобки")
+        leaves.append(stack.pop())
+
+    return leaves
